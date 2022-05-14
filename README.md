@@ -8,10 +8,10 @@ performance benchmark for this kind of endpoint.
 
 The cloudformation templates deploy the following resources on AWS.
 
-[x] S3 Bucket to upload and save the model artifact
-[x] Sagemaker Model
-[x] Sagemaker Endpoint Config
-[x] S3 Bucket to upload sagemaker endpoint's input and save sagemaker endpoint's results
-[x] Sagemaker Endpoint
-[x] Application Auto Scaling Target
-[x] Application Auto Scaling Policy
+[x] S3 Bucket to upload and save the model artifact</br>
+[x] Sagemaker Model</br>
+[x] Sagemaker Endpoint Config</br>
+[x] S3 Bucket to upload sagemaker endpoint's input and save sagemaker endpoint's results</br>
+[x] Sagemaker Endpoint</br>
+[x] Application Auto Scaling Target</br>
+[x] Application Auto Scaling Policy</br>
