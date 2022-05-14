@@ -1,0 +1,221 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Async Inference Sagemaker POC (eiafanad - test)
+
+Parameters:
+  pModelName:
+    Description: Model name
+    Type: String
+  pS3ModelBucket:
+    Type: String
+  pS3ModelKey:
+    Type: String
+  pS3InferenceResultsBucket:
+    Type: String
+    Description: Inference Results Bucket Name parameter
+  pSageMakerRoleName:
+    Type: String
+  pInferenceImageUrl:
+    Description: The container used to deploy the model
+    Type: String
+  pInstanceType:
+    Description: Instance type
+    Type: String
+    Default: ml.t2.xlarge
+  pInstanceCount:
+    Description: Instance count
+    Type: String
+    Default: 1
+  pEndpointConfigName:
+    Description: Endpoint config name
+    Type: String
+  pEndpointName:
+    Description: Endpoint name
+    Type: String
+  pVariantName:
+    Description: Endpoint config variant name
+    Type: String
+    Default: 'AllTraffic'
+  pInitialVariantWeight:
+    Description: Initial Endpoint Variant Weigh
+    Type: Number
+    Default: 1.0
+  pLogLevel:
+    Type: String
+    Default: 20
+  pAcceptContentType:
+    Type: String
+    Default: "application/json"
+  pSagemakerProgramPy:
+    Description: Nombre del archivo .py de inferencia
+    Type: String
+    Default: "inference.py"
+
+Resources:
+  # -------------------------- BUCKET RESOURCES -------------------------------
+  rInferenceResultsS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref pS3InferenceResultsBucket
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256 
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+  # -------------------------- ROLE RESOURCES --------------------------------- 
+  rSageMakerExecutionEndpointRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref pSageMakerRoleName
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - sagemaker.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: s3_artifact_sagemaker_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject*
+                  - s3:ListObject*
+                  - s3:ListBucket*
+                Resource: 
+                  - !ImportValue
+                    Fn::Sub: ${pS3ModelBucket}-arn
+                  - Fn::Join:
+                    - '/'
+                    - - !ImportValue
+                        Fn::Sub: ${pS3ModelBucket}-arn
+                      - '*'
+        - PolicyName: s3_results_sagemaker_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject*
+                  - s3:ListObject*
+                  - s3:ListBucket*
+                  - s3:PutObject*
+                Resource: 
+                  - !GetAtt rInferenceResultsS3Bucket.Arn
+                  - Fn::Join:
+                    - '/'
+                    - - !GetAtt rInferenceResultsS3Bucket.Arn
+                      - '*'
+        - PolicyName: logs_sagemaker_endpoint_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:CreateLogGroup
+                  - logs:DescribeLogStreams
+                  - ecr:GetAuthorizationToken
+                Resource: 
+                  - '*'
+        - PolicyName: ecr_sagemaker_endpoint_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                Resource: 
+                  - arn:aws:ecr:*:*:repository/*
+
+  # -------------------------- SAGEMAKER RESOURCES ----------------------------
+  rModel:
+    Type: AWS::SageMaker::Model
+    Properties: 
+      Containers: 
+        - 
+          Image: !Ref pInferenceImageUrl
+          ModelDataUrl: !Sub "s3://${pS3ModelBucket}/${pS3ModelKey}"
+          Environment: 
+            SAGEMAKER_CONTAINER_LOG_LEVEL: !Ref pLogLevel
+            SAGEMAKER_DEFAULT_INVOCATIONS_ACCEPT: !Ref pAcceptContentType
+            SAGEMAKER_PROGRAM: !Ref pSagemakerProgramPy
+            SAGEMAKER_REGION: !Sub "${AWS::Region}"
+      ExecutionRoleArn: !GetAtt rSageMakerExecutionEndpointRole.Arn
+      ModelName: !Ref pModelName
+  
+  rEndpoint:
+    Type: AWS::SageMaker::Endpoint
+    Properties: 
+      EndpointConfigName: !GetAtt rEndpointConfig.EndpointConfigName
+      EndpointName: !Ref pEndpointName
+  
+  rEndpointConfig:
+    Type: AWS::SageMaker::EndpointConfig
+    DependsOn: rInferenceResultsS3Bucket
+    Properties:
+      EndpointConfigName: !Ref pEndpointConfigName
+      AsyncInferenceConfig:
+        OutputConfig:
+          S3OutputPath: !Sub "s3://${pS3InferenceResultsBucket}"
+      ProductionVariants: 
+        -
+          ModelName: !GetAtt rModel.ModelName
+          VariantName: !Ref pVariantName
+          # configs
+          InitialInstanceCount: !Ref pInstanceCount
+          InstanceType: !Ref pInstanceType
+          InitialVariantWeight: !Ref pInitialVariantWeight
+
+  # ------------------------- AUTOSCALING RESOURCES ---------------------------
+  rScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    DependsOn: rEndpoint
+    Properties: 
+      MaxCapacity: 2
+      MinCapacity: 0
+      ResourceId: !Sub "endpoint/${pEndpointName}/variant/${pVariantName}"
+      RoleARN: 
+        !Join
+          - '/'
+          - - !Sub "arn:aws:iam::${AWS::AccountId}:role"
+            - aws-service-role
+            - sagemaker.application-autoscaling.amazonaws.com
+            - AWSServiceRoleForApplicationAutoScaling_SageMakerEndpoint
+      ScalableDimension: sagemaker:variant:DesiredInstanceCount
+      ServiceNamespace: sagemaker
+
+  rScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties: 
+      PolicyName: SagemakerScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref rScalingTarget
+      TargetTrackingScalingPolicyConfiguration: 
+        ScaleInCooldown: 150
+        ScaleOutCooldown: 30
+        TargetValue: 10.0
+        CustomizedMetricSpecification: 
+          Dimensions:
+            - Name: EndpointName
+              Value: !Ref pEndpointName
+          MetricName: ApproximateBacklogSizePerInstance
+          Namespace: /aws/sagemaker/Endpoints
+          Statistic: Average
+          Unit: Percent
