@@ -210,12 +210,11 @@ Resources:
       TargetTrackingScalingPolicyConfiguration: 
         ScaleInCooldown: 150
         ScaleOutCooldown: 30
-        TargetValue: 10.0
+        TargetValue: 5.0
         CustomizedMetricSpecification: 
           Dimensions:
             - Name: EndpointName
               Value: !Ref pEndpointName
           MetricName: ApproximateBacklogSizePerInstance
-          Namespace: /aws/sagemaker/Endpoints
+          Namespace: AWS/SageMaker
           Statistic: Average
-          Unit: Percent
