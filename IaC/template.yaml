@@ -49,8 +49,35 @@ Parameters:
     Description: Nombre del archivo .py de inferencia
     Type: String
     Default: "inference.py"
+  pCallSagemakerLambdaName:
+    Description: Lambda function name
+    Type: String
 
 Resources:
+
+  # -------------------------- LAMBDA RESOURCES -------------------------------
+  rCallSagemakerLambda:
+    Type: AWS::Lambda::Function
+    DependsOn: rCallSagemakerLambdaRole
+    Properties: 
+      Architectures: 
+        - x86_64
+      Code:
+        S3Bucket: !ImportValue
+          Fn::Sub: ${pS3ModelBucket}
+        S3Key: lambdas/call_sagemaker_lambda.zip
+      Description: Lambda function to execute sagemaker async inference endpoint
+      Environment:
+        Variables:
+          PYTHONPATH: /var/runtime:/var/runtime/packages:/var/task/packages
+      FunctionName: !Ref pCallSagemakerLambdaName
+      Handler: app.handler
+      MemorySize: 10240
+      PackageType: Zip 
+      Role: String
+      Runtime: python3.8
+      Timeout: 900
+
   # -------------------------- BUCKET RESOURCES -------------------------------
   rInferenceResultsS3Bucket:
     Type: AWS::S3::Bucket
@@ -70,6 +97,46 @@ Resources:
         Status: Enabled
 
   # -------------------------- ROLE RESOURCES --------------------------------- 
+  rCallSagemakerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: lambda_call_async_sagemaker_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - sagemaker:InvokeEndpoint
+                  - sagemaker:InvokeEndpointAsync
+                Resource:
+                  - !Sub 'arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/{pEndpointName}'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject*
+                  - s3:ListObject*
+                  - s3:ListBucket*
+                  - s3:PutObject*
+                  - s3:DeleteObject*
+                Resource: 
+                  - !GetAtt rInferenceResultsS3Bucket.Arn
+                  - Fn::Join:
+                    - '/'
+                    - - !GetAtt rInferenceResultsS3Bucket.Arn
+                      - '*'
+
   rSageMakerExecutionEndpointRole:
     Type: AWS::IAM::Role
     Properties:
