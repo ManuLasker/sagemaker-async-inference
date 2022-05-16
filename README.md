@@ -9,7 +9,7 @@ performance benchmark for this kind of endpoint.
 The cloudformation templates deploy the following resources on AWS.
 
 [x] S3 Bucket to upload and save the model artifact</br>
-[x] Lambda to test sagemaker endpoint
+[x] Lambda to test sagemaker endpoint</br>
 [x] Lambda Execution Role with the necessary permissions</br>
 [x] Sagemaker Execution Role with the necessary permissions</br>
 [x] Sagemaker Model</br>
