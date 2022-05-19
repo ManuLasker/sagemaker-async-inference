@@ -1,5 +1,6 @@
 boto3
 moto
 pytest
+coverage
 
 -r requirements.txt
