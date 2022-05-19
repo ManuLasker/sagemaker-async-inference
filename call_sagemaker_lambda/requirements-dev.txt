@@ -1,6 +1,5 @@
 boto3
 moto
-freezegun
 pytest
 
 -r requirements.txt
