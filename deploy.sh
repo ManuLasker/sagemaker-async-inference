@@ -34,13 +34,14 @@ if [[ $UPDATE_SWITCH == "no" ]]; then
     if [[ $UPDATE_ARTIFACT == "si" ]]; then
         # upload artifact to bucket
         aws s3 cp --recursive ./carta_laboral s3://nu0087002ei-aid-mlops-artifacts-bucket
+        bash ./build_deploy_lambda.sh
     fi
     # create main stack
     aws cloudformation create-stack --stack-name $STACK_MAIN_NAME --template-body $TEMPLATE_MAIN_FILE_PATH --parameters $PARAMS_MAIN_FILE_PATH --capabilities CAPABILITY_NAMED_IAM --on-failure DELETE
 elif [[ $UPDATE_SWITCH == "si" ]]; then
     echo "updating mode stack"
     # aws cloudformation update-stack --stack-name $STACK_BUCKET_NAME --template-body $TEMPLATE_BUCKET_FILE_PATH --parameters $PARAMS_BUCKET_FILE_PATH --capabilities CAPABILITY_IAM
-    # wait until finish 
+    # wait until finish
     #aws cloudformation wait stack-update-complete --stack-name $STACK_BUCKET_NAME
     aws cloudformation update-stack --stack-name $STACK_MAIN_NAME --template-body $TEMPLATE_MAIN_FILE_PATH --parameters $PARAMS_MAIN_FILE_PATH --capabilities CAPABILITY_NAMED_IAM
 fi
