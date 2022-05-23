@@ -74,8 +74,8 @@ Resources:
       Handler: app.handler
       MemorySize: 10240
       PackageType: Zip 
-      Role: String
-      Runtime: python3.8
+      Role: !GetAtt rCallSagemakerLambdaRole.Arn
+      Runtime: python3.9
       Timeout: 900
 
   # -------------------------- BUCKET RESOURCES -------------------------------
@@ -122,7 +122,7 @@ Resources:
                   - sagemaker:InvokeEndpoint
                   - sagemaker:InvokeEndpointAsync
                 Resource:
-                  - !Sub 'arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/{pEndpointName}'
+                  - !Sub 'arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/${pEndpointName}'
               - Effect: Allow
                 Action:
                   - s3:GetObject*
