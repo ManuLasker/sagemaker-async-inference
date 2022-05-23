@@ -11,5 +11,4 @@ test:
 	$(python_path) -m pytest .
 
 clean:
-	rm -r packages
 	rm -r $(env_name)
