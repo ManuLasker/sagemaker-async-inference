@@ -4,6 +4,9 @@ PWD="file://$(pwd)"
 
 # Set cli variables
 CREDENTIALS_FILE_PATH="credentials"
+
+echo "AWS_DEFAULT_REGION=us-east-1" > $CREDENTIALS_FILE_PATH
+
 # Bucket params and template
 PARAMS_BUCKET_FILE_PATH="$PWD/IaC/params-artifacts-bucket.json"
 TEMPLATE_BUCKET_FILE_PATH="$PWD/IaC/template-artifacts-bucket.yaml"
