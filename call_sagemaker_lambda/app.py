@@ -12,7 +12,7 @@ from src.utils.aws_utilities import (s3_check_to_download,
 sg = boto3.client("sagemaker-runtime", region_name="us-east-1")
 
 def handler(event, context = None):
-    with Image.open(event.get("input_image_path", "input/carta_laboral_image.jpg")) as pil_image:
+    with Image.open(event.get("input_image_path", "input/carta_laboral_firma.jpg")) as pil_image:
         base64_im = pil_to_base64(pil_image)
         # create input file
         identifier = str(uuid.uuid4())

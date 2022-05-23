@@ -13,7 +13,6 @@ test:
 
 prod:
 	echo "building requirements and packages"
-	rm -r $(env_name)
 	conda create --prefix $(env_name)/ python=3.9 -y
 	$(python_path) -m pip install -r requirements.txt --target ./packages
 
