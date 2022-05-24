@@ -43,4 +43,4 @@ the cpu utilization of the system with two instances increase up to 119% and eac
 
 In this case, with current autoscaling and endpoint configurations, the results were good until it reached the 220 request call. Since the lambda function have a 15 minutes timeout, after the 220 processed requests, the rest 30 calls to the lambda function resulted in timeout exception. If we want to solve this problem I recommend increase the max instances parameter in the autoscaling configuration. So for 220 or more, I don't recommend the use with a lambda integration, because it will increase cost for the lambda function.
 
-[results_150_csv](false_sagemaker_clients/results/lambda_execution_05_22_2022_250.csv)
+[results_250_csv](false_sagemaker_clients/results/lambda_execution_05_22_2022_250.csv)
