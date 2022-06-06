@@ -8,7 +8,7 @@ app = typer.Typer()
 
 @app.command()
 def call_lambda(
-    lambda_name: str = typer.Argument("nu0087002ei-aid-dev-sagemaker-async-lambda",
+    lambda_name: str = typer.Argument("nu0087002eia-aid-dev-sagemaker-async-lambda",
                                       help="Name of the lambda to execute asynchronously"),
     false_clients_number: int = typer.Option(10, "-n",
                                              help="Number of false clients to create"),

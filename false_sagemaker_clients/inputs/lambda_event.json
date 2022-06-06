@@ -1,5 +1,5 @@
 {
-    "endpoint_name": "nu0087002ei-aid-dev-firma-model",
-    "bucket_result_name": "nu0087002ei-aid-dev-inference-results-bucket",
+    "endpoint_name": "nu0087002eia-aid-dev-firma-model",
+    "bucket_result_name": "nu0087002eia-aid-dev-inference-results-bucket",
     "input_image_path": "input/carta_laboral_firma.jpg"
 }

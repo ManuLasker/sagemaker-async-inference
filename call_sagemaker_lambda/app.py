@@ -36,8 +36,8 @@ def handler(event, context = None):
 if __name__ == "__main__":
     print("Make a call to a sagemaker async endpoint")
     result = handler({
-        "endpoint_name": "nu0087002ei-aid-dev-firma-model",
-        "bucket_result_name": "nu0087002ei-aid-dev-inference-results-bucket",
+        "endpoint_name": "nu0087002eia-aid-dev-firma-model",
+        "bucket_result_name": "nu0087002eia-aid-dev-inference-results-bucket",
         "input_image_path": sys.argv[1]
     })
     print(result)
